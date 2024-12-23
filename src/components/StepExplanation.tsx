@@ -21,7 +21,7 @@ const StepExplanation: React.FC<StepExplanationProps> = ({
       <h2 className="text-xl font-bold mb-4">
         Step {step + 1} - {name}
       </h2>
-      <div className="relative">
+      <div className="step relative">
         <div className="bg-gray-100 p-4 pt-6 rounded mb-4">
           <code className="text-sm">{code}</code>
         </div>

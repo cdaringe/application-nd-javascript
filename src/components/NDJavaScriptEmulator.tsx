@@ -6,9 +6,11 @@ import StepExplanation from "./StepExplanation";
 import SuperMorioFace from "./SuperMorioFace";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
+import ScreenToSmallModal from "./ScreenTooSmallModal";
 
 const NDJavaScriptEmulator: React.FC = () => {
   const nextButtonRef = createRef<HTMLButtonElement>();
+  const contentWindowRef = createRef<HTMLDivElement>();
   const [currentStep, setCurrentStep] = useState(0);
   const [pageTitle, setPageTitle] = useState(
     "NDJavaScript Emulator - Follow steps below to begin"
@@ -27,8 +29,11 @@ const NDJavaScriptEmulator: React.FC = () => {
       return;
     }
     const timeout = setTimeout(() => {
-      console.log("clicking");
-      nextButtonRef.current?.click();
+      const el = nextButtonRef.current;
+      if (!el) {
+        return;
+      }
+      el.click();
     }, 10);
     return () => clearTimeout(timeout);
   }, [nextButtonRef]);
@@ -53,11 +58,11 @@ const NDJavaScriptEmulator: React.FC = () => {
       },
     },
     {
-      name: "Page stream begings",
+      name: "Page stream begins",
       description: (
         <>
           The HTTP handshake will succeed, and we are now streaming the page
-          content. Specifically, instead of a{" "}
+          instructions. Specifically, instead of a{" "}
           <pre className="inline">content-type: text/html</pre>, we have a
           stream of{" "}
           <pre className="inline">content-type: application/nd-javascript</pre>!
@@ -95,54 +100,55 @@ const NDJavaScriptEmulator: React.FC = () => {
         ]);
       },
     },
-    {
-      name: "Set initial styles",
-      description:
-        "Immediately inline some styles. We want to see something while the rest of our program streams in.",
-      type: "application/nd-javascript",
-      code: "document.head.appendChild(styleElement)",
-      execute: () => {
-        setPageContent(
-          (prevContent) => `
-          ${prevContent}
-          <style>
-            .emulator-main {
-              background-color: lightblue;
-              width: 100%;
-              height: 100%;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-          </style>
+    (() => {
+      const code = `var style=document.createElement('style'); style.textContent='...'; document.head.appendChild(styleElement);`;
+      return {
+        name: "Set initial styles",
+        description:
+          "Immediately inline some styles. We want to see something while the rest of our program streams in.",
+        type: "application/nd-javascript",
+        code,
+        execute: () => {
+          setPageContent(
+            (prevContent) => `
+            ${prevContent}
+            <style>
+              .emulator-main {
+                background-color: lightblue;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+            </style>
+          `
+          );
+          setExecutedCommands((prev) => [...prev, code]);
+        },
+      };
+    })(),
+    (() => {
+      const code =
+        'var m = document.createElement("main"); document.body.appendChild(m); /* create SVG face, append it */';
+      return {
+        name: "Create initial DOM nodes",
+        code,
+        description:
+          "Create the initial DOM nodes for the page. Again, we used to use HTML for this. We could even continue to do so! However, our application doesn't deal in HTML--it deals in JavaScript, including the window and its APIs! Once content is on the screen, it is not immediately interactable. If a proposal like this were ever be adopted, it is not yet clear when interactability would be granted. Nonetheless, we have not bound behavior yet--just visual nodes.",
+        type: "application/nd-javascript",
+        execute: () => {
+          const basicFaceSVG = renderToString(<SuperMorioFace />);
+          setPageContent(
+            (
+              prevContent
+            ) => `${prevContent}<main><div id='root'>${basicFaceSVG}</div></main>
         `
-        );
-        setExecutedCommands((prev) => [
-          ...prev,
-          "document.head.appendChild(styleElement)",
-        ]);
-      },
-    },
-    {
-      name: "Create initial DOM nodes",
-      description:
-        "Create the initial DOM nodes for the page. Again, we used to use HTML for this. However, our application doesn't deal in HTML--it deals in JavaScript & JavaScript Runtimes, including the window and its APIs! Once content is on the screen, it is not immediately interactable. If a proposal like this were ever be adopted, it is not yet clear when interactability would be granted. Nonetheless, we have not bound behavior yet--just visual nodes.",
-      type: "application/nd-javascript",
-      code: 'document.body.innerHTML = "<main><div id=\\"morio-face-container\\">...</div></main>"',
-      execute: () => {
-        const basicFaceSVG = renderToString(<SuperMorioFace />);
-        setPageContent(
-          (
-            prevContent
-          ) => `${prevContent}<main><div id='root'>${basicFaceSVG}</div></main>
-        `
-        );
-        setExecutedCommands((prev) => [
-          ...prev,
-          'document.body.innerHTML = "<main><div id=\\"morio-face-container\\">...</div></main>"',
-        ]);
-      },
-    },
+          );
+          setExecutedCommands((prev) => [...prev, code]);
+        },
+      };
+    })(),
 
     {
       name: "Start downloading styles",
@@ -281,85 +287,116 @@ const NDJavaScriptEmulator: React.FC = () => {
       setTimeout(() => {
         const steps = document.querySelectorAll(".step");
         if (steps[currentStep + 1]) {
-          steps[currentStep + 1].scrollIntoView({ behavior: "smooth" });
+          steps[currentStep + 1].scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
         }
       }, 10);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="w-full bg-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-12">
-            <h1 className="text-4xl font-bold mb-4">
-              application/nd-javascript Tutorial
-            </h1>
-            <p className="text-xl text-gray-700 mb-8">
-              This tutorial demonstrates how the proposed
-              application/nd-javascript MIME type works. It simulates a stream
-              of newline-delimited JavaScript statements and shows how they
-              affect a web page in real-time.
-            </p>
+    <>
+      <ScreenToSmallModal targetRef={contentWindowRef} />
+      <div className="min-h-screen bg-gray-100">
+        <div className="w-full bg-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="pt-12 pb-4">
+              <h1 className="text-4xl font-bold mb-4">
+                application/nd-javascript tutorial
+              </h1>
+              <p className="text-xl text-gray-700 mb-4">
+                This tutorial demonstrates how the proposed
+                application/nd-javascript MIME type works. It simulates a stream
+                of newline-delimited JavaScript statements and shows how they
+                build & update a web application.
+              </p>
+              <p className="mb-4">
+                application/nd-javascript itself is not the interesting part of
+                this demonstration. Avoiding usage of text/html is the
+                interesting part. Sadly, because this capability does not
+                actually exist in browsers, the demonstration is only faked.
+                Whether a real implementation uses application/binary,
+                application/wasm, or some other similar MIME--any or all would
+                be welcome. application/nd-javascript is used for simplicity and
+                because it has parity with existing behavior supported by
+                browsers for text/html.
+              </p>
+              <p className="mb-4">
+                <b>Why do this at all?</b> In many applications, our executables
+                generate DOM. Why is it then, that we must also generate HTML,
+                distribute complex artifacts,only to then switch back to
+                generating DOM in the browser? Can we not just generate DOM from
+                the start? HTML is wonderful, but there is no need for it, in
+                the server or in the browser, if the browser simply would allow
+                us. Converting from {"DOM => HTML => DOM"} adds complexity to
+                our applications and also does not give us full control of our
+                application!
+              </p>
+              <p className="mb-4">
+                <b>Let{"'"}s explore a HTML-free web application load. </b>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="sticky top-0 z-10 w-full bg-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 border border-b-gray-200 relative ">
+            <BrowserEmulator
+              ref={contentWindowRef}
+              title={pageTitle}
+              content={
+                <>
+                  <div dangerouslySetInnerHTML={{ __html: pageContent }} />
+                </>
+              }
+              commands={executedCommands}
+              downloads={downloads}
+              url={pageUrl}
+            />
+          </div>
+        </div>
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24">
+          <div>
+            {ndJavaScriptCommands.map((command, index) => {
+              const isVisible = index <= currentStep;
+              if (!isVisible) {
+                return null;
+              }
+              return (
+                <div
+                  key={index}
+                  className="mb-4 last:mb-0 pt-4 first:pt-0 border-t first:border-t-0 border-gray-200"
+                >
+                  <StepExplanation
+                    step={index}
+                    name={command.name}
+                    type={command.type}
+                    code={command.code}
+                    // instruction={command.name}
+                    description={command.description}
+                  />
+                  {index === currentStep &&
+                    index < ndJavaScriptCommands.length && (
+                      <div className="float-end mt-1">
+                        <button
+                          ref={nextButtonRef}
+                          onClick={handleNext}
+                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
-
-      <div className="sticky top-0 z-10 w-full bg-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 border-b-gray-500 relative ">
-          <BrowserEmulator
-            title={pageTitle}
-            content={
-              <>
-                <div dangerouslySetInnerHTML={{ __html: pageContent }} />
-              </>
-            }
-            commands={executedCommands}
-            downloads={downloads}
-            url={pageUrl}
-          />
-        </div>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24">
-        {/* <div className="max-h-[calc(100vh-20rem)] overflow-y-auto pr-4 border border-gray-200 rounded-lg shadow-inner" style={{scrollbarWidth: 'thin'}}> */}
-        <div>
-          {ndJavaScriptCommands.map((command, index) => {
-            const isVisible = index <= currentStep;
-            if (!isVisible) {
-              return null;
-            }
-            return (
-              <div
-                key={index}
-                className="step mb-4 last:mb-0 pt-4 first:pt-0 border-t first:border-t-0 border-gray-200"
-              >
-                <StepExplanation
-                  step={index}
-                  name={command.name}
-                  type={command.type}
-                  code={command.code}
-                  // instruction={command.name}
-                  description={command.description}
-                />
-                {index === currentStep &&
-                  index < ndJavaScriptCommands.length && (
-                    <div className="float-end mt-1">
-                      <button
-                        ref={nextButtonRef}
-                        onClick={handleNext}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 
