@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-const SuperMorioFace: React.FC<{ id?: string }> = ({ id }) => {
+const SuperMorioFace: React.FC = () => {
   const [nosePosition, setNosePosition] = useState({ x: 150, y: 150 });
   const [mustachePosition, setMustachePosition] = useState({ x: 150, y: 180 });
   const [chinPosition, setChinPosition] = useState({ x: 150, y: 220 });
@@ -21,9 +21,13 @@ const SuperMorioFace: React.FC<{ id?: string }> = ({ id }) => {
     if (!dragging) return;
 
     const svg = e.currentTarget;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const point = svg.createSVGPoint();
     point.x = e.clientX;
     point.y = e.clientY;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const cursorPoint = point.matrixTransform(svg.getScreenCTM()?.inverse());
 
     switch (dragging) {

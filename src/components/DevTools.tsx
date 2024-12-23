@@ -2,7 +2,7 @@ import React from "react";
 
 interface DevToolsProps {
   commands: string[];
-  downloads: { name: string; status: string; type: string }[];
+  downloads: { name: string; status: string | null; type: string }[];
 }
 
 const DevTools: React.FC<DevToolsProps> = ({ commands, downloads }) => {
