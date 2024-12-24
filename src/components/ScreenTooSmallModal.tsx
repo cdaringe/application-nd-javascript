@@ -13,7 +13,7 @@ const ScreenToSmallModal: React.FC<{
   useEffect(() => {
     const checkHeight = () => {
       const height = targetRef.current && getHeight(targetRef.current);
-      if (height != null && height < 140) {
+      if (height != null && height < 105) {
         setShowModal(true);
       } else {
         setShowModal(false);
