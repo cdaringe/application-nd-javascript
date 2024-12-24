@@ -89,7 +89,7 @@ const NDJavaScriptEmulator: React.FC = () => {
             {"<title>My Cool Page</title>"}
           </pre>
           . Who needs HTML!? We have JavaScript! Observe the title update on
-          "Next".
+          {'"Next"'}.
         </>
       ),
       type: "application/nd-javascript",
