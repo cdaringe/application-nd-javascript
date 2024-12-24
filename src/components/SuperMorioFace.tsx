@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 "use client";
 
 import React, { useState } from "react";
@@ -8,25 +9,32 @@ const SuperMorioFace: React.FC = () => {
   const [chinPosition, setChinPosition] = useState({ x: 150, y: 220 });
   const [hatPosition, setHatPosition] = useState({ x: 150, y: 50 });
   const [dragging, setDragging] = useState<string | null>(null);
+  const [facePosition, setFacePosition] = useState({ x: 150, y: 150 });
+  const [leftEyePosition, setLeftEyePosition] = useState({ x: -30, y: -30 }); // relative to face
+  const [rightEyePosition, setRightEyePosition] = useState({ x: 30, y: -30 }); // relative to face
 
-  const handleMouseDown = (part: string) => () => {
-    setDragging(part);
-  };
+  const handleMouseDown =
+    (part: string) => (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault(); // Prevent scrolling on touch
+      setDragging(part);
+    };
 
   const handleMouseUp = () => {
     setDragging(null);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<SVGElement>) => {
+  const handleMouseMove = (
+    e: React.MouseEvent<SVGElement> | React.TouchEvent<SVGElement>
+  ) => {
     if (!dragging) return;
 
     const svg = e.currentTarget;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const point = svg.createSVGPoint();
-    point.x = e.clientX;
-    point.y = e.clientY;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    point.x = clientX;
+    point.y = clientY;
     // @ts-ignore
     const cursorPoint = point.matrixTransform(svg.getScreenCTM()?.inverse());
 
@@ -43,6 +51,21 @@ const SuperMorioFace: React.FC = () => {
       case "hat":
         setHatPosition({ x: cursorPoint.x, y: cursorPoint.y });
         break;
+      case "face":
+        setFacePosition({ x: cursorPoint.x, y: cursorPoint.y });
+        break;
+      case "leftEye":
+        setLeftEyePosition({
+          x: cursorPoint.x - facePosition.x,
+          y: cursorPoint.y - facePosition.y,
+        });
+        break;
+      case "rightEye":
+        setRightEyePosition({
+          x: cursorPoint.x - facePosition.x,
+          y: cursorPoint.y - facePosition.y,
+        });
+        break;
     }
   };
 
@@ -53,26 +76,41 @@ const SuperMorioFace: React.FC = () => {
         height="300"
         viewBox="0 0 300 300"
         onMouseMove={handleMouseMove}
+        onTouchMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onTouchEnd={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Hat */}
-        <rect
-          x={hatPosition.x - 50}
-          y={hatPosition.y}
-          width="100"
-          height="30"
-          fill="red"
-          onMouseDown={handleMouseDown("hat")}
+        {/* Face */}
+        <circle
+          cx={facePosition.x}
+          cy={facePosition.y}
+          r="100"
+          fill="#ffdbac"
+          onMouseDown={handleMouseDown("face")}
+          onTouchStart={handleMouseDown("face")}
           style={{ cursor: "move" }}
         />
 
-        {/* Face */}
-        <circle cx="150" cy="150" r="100" fill="#ffdbac" />
-
         {/* Eyes */}
-        <circle cx="120" cy="120" r="10" fill="black" />
-        <circle cx="180" cy="120" r="10" fill="black" />
+        <circle
+          cx={facePosition.x + leftEyePosition.x}
+          cy={facePosition.y + leftEyePosition.y}
+          r="10"
+          fill="black"
+          onMouseDown={handleMouseDown("leftEye")}
+          onTouchStart={handleMouseDown("leftEye")}
+          style={{ cursor: "move" }}
+        />
+        <circle
+          cx={facePosition.x + rightEyePosition.x}
+          cy={facePosition.y + rightEyePosition.y}
+          r="10"
+          fill="black"
+          onMouseDown={handleMouseDown("rightEye")}
+          onTouchStart={handleMouseDown("rightEye")}
+          style={{ cursor: "move" }}
+        />
 
         {/* Nose */}
         <circle
@@ -81,6 +119,7 @@ const SuperMorioFace: React.FC = () => {
           r="15"
           fill="#ffb6c1"
           onMouseDown={handleMouseDown("nose")}
+          onTouchStart={handleMouseDown("nose")}
           style={{ cursor: "move" }}
         />
 
@@ -92,6 +131,7 @@ const SuperMorioFace: React.FC = () => {
           height="10"
           fill="brown"
           onMouseDown={handleMouseDown("mustache")}
+          onTouchStart={handleMouseDown("mustache")}
           style={{ cursor: "move" }}
         />
 
@@ -102,6 +142,19 @@ const SuperMorioFace: React.FC = () => {
           stroke="black"
           strokeWidth="2"
           onMouseDown={handleMouseDown("chin")}
+          onTouchStart={handleMouseDown("chin")}
+          style={{ cursor: "move" }}
+        />
+
+        {/* Hat - moved to end for top layer */}
+        <rect
+          x={hatPosition.x - 50}
+          y={hatPosition.y}
+          width="100"
+          height="30"
+          fill="red"
+          onMouseDown={handleMouseDown("hat")}
+          onTouchStart={handleMouseDown("hat")}
           style={{ cursor: "move" }}
         />
       </svg>
