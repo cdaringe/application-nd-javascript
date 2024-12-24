@@ -7,6 +7,7 @@ import SuperMorioFace from "./SuperMorioFace";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import ScreenToSmallModal from "./ScreenTooSmallModal";
+import { Spiel } from "./Spiel";
 
 const NDJavaScriptEmulator: React.FC = () => {
   const nextButtonRef = createRef<HTMLButtonElement>();
@@ -61,11 +62,9 @@ const NDJavaScriptEmulator: React.FC = () => {
       name: "Page stream begins",
       description: (
         <>
-          The HTTP handshake will succeed, and we are now streaming the page
-          instructions. Specifically, instead of a{" "}
-          <pre className="inline">content-type: text/html</pre>, we have a
-          stream of{" "}
-          <pre className="inline">content-type: application/nd-javascript</pre>!
+          Let us simulate a succussful HTTP handshake, and begin streaming
+          nd-javascript statements. Assume that a newline transform stream is
+          present.
         </>
       ),
       type: "event",
@@ -84,10 +83,13 @@ const NDJavaScriptEmulator: React.FC = () => {
       name: "Set page title",
       description: (
         <>
-          Here we see our first nd-javascript command in our HTTP stream.
+          Here we see our first nd-javascript line in our HTTP stream.
           Historically, we would use HTML to set a title, a la{" "}
-          <pre className="inline">{"<title>some boring page</title>"}</pre>. Who
-          needs HTML!? We have JavaScript!
+          <pre className="inline break-words text-wrap">
+            {"<title>My Cool Page</title>"}
+          </pre>
+          . Who needs HTML!? We have JavaScript! Observe the title update on
+          "Next".
         </>
       ),
       type: "application/nd-javascript",
@@ -135,7 +137,7 @@ const NDJavaScriptEmulator: React.FC = () => {
         name: "Create initial DOM nodes",
         code,
         description:
-          "Create the initial DOM nodes for the page. Again, we used to use HTML for this. We could even continue to do so! However, our application doesn't deal in HTML--it deals in JavaScript, including the window and its APIs! Once content is on the screen, it is not immediately interactable. If a proposal like this were ever be adopted, it is not yet clear when interactability would be granted. Nonetheless, we have not bound behavior yet--just visual nodes.",
+          "Create the initial DOM nodes for the page. Again, we used to use HTML for this. We could even continue to do so! However, our application doesn't deal in HTML--it deals in JavaScript, including the window and its APIs! Once content is on the screen, it is not immediately interactable. If a proposal like this were ever be adopted, it is not yet clear when interactability would be granted. Nonetheless, we have no interaction defined yet--just visual nodes.",
         type: "application/nd-javascript",
         execute: () => {
           const basicFaceSVG = renderToString(<SuperMorioFace />);
@@ -153,7 +155,7 @@ const NDJavaScriptEmulator: React.FC = () => {
     {
       name: "Start downloading styles",
       description:
-        "Perhaps our application needs some external CSS. Sure--go grab it! We used to use <link /> for such an operation.",
+        "Perhaps our application needs some external CSS. Sure--go grab it! We used to use <link /> for such an operation. Now, perhaps we use `import()` statements!",
       type: "application/nd-javascript",
       code: 'import("styles.css", { assert: { type: "css" } })',
       execute: () => {
@@ -172,7 +174,7 @@ const NDJavaScriptEmulator: React.FC = () => {
       return {
         name: "Start downloading assets",
         description:
-          "We are streaming nd-javascript because we are fundamentally building an application, not a simple document. Thus, let us fetch the javascript powering our interactive application. For small applications, it may be common to not make external requests at all, and instead continue stream in code within this open stream.",
+          "We are streaming nd-javascript because we are fundamentally building an application, not a simple document. Thus, let us fetch the javascript powering our interactive application. For small applications, it may be common to not make external requests at all, and instead continue stream in code within this open stream. Here, let's pretend that we have a CDN asset we actually want to use. This step kicks off the async download.",
         type: "application/nd-javascript",
         code,
         execute: () => {
@@ -303,45 +305,12 @@ const NDJavaScriptEmulator: React.FC = () => {
         <div className="w-full bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="pt-12 pb-4">
-              <h1 className="text-4xl font-bold mb-4">
-                application/nd-javascript tutorial
-              </h1>
-              <p className="text-xl text-gray-700 mb-4">
-                This tutorial demonstrates how the proposed
-                application/nd-javascript MIME type works. It simulates a stream
-                of newline-delimited JavaScript statements and shows how they
-                build & update a web application.
-              </p>
-              <p className="mb-4">
-                application/nd-javascript itself is not the interesting part of
-                this demonstration. Avoiding usage of text/html is the
-                interesting part. Sadly, because this capability does not
-                actually exist in browsers, the demonstration is only faked.
-                Whether a real implementation uses application/binary,
-                application/wasm, or some other similar MIME--any or all would
-                be welcome. application/nd-javascript is used for simplicity and
-                because it has parity with existing behavior supported by
-                browsers for text/html.
-              </p>
-              <p className="mb-4">
-                <b>Why do this at all?</b> In many applications, our executables
-                generate DOM. Why is it then, that we must also generate HTML,
-                distribute complex artifacts,only to then switch back to
-                generating DOM in the browser? Can we not just generate DOM from
-                the start? HTML is wonderful, but there is no need for it, in
-                the server or in the browser, if the browser simply would allow
-                us. Converting from {"DOM => HTML => DOM"} adds complexity to
-                our applications and also does not give us full control of our
-                application!
-              </p>
-              <p className="mb-4">
-                <b>Let{"'"}s explore a HTML-free web application load. </b>
-              </p>
+              <Spiel />
             </div>
           </div>
         </div>
 
-        <div className="sticky top-0 z-10 w-full bg-gray-100">
+        <div id="demo-start" className="sticky top-0 z-10 w-full bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 border border-b-gray-200 relative ">
             <BrowserEmulator
               ref={contentWindowRef}
